@@ -70,19 +70,19 @@ def update_rat(reg, reg_val):
 	if reg == 'r_7':
 		r_7 = reg_val
 
-def fillUp(opcode,reg1,reg2,rat1,rat2):
+def fillUp(opcode,reg1,reg2,rat1,rat2,clk):
     if ((rat1 == '-') and (rat2 == '-')):
-        rst = [1,opcode,reg1,reg2,'-','-',0]
+        rst = [1,opcode,reg1,reg2,'-','-',0,clk,0,0]
     elif ((rat1 == '-') and (rat2 != '-')):
-        rst = [1,opcode,reg1,'-','-',rat2,0]
+        rst = [1,opcode,reg1,'-','-',rat2,0,clk,0,0]
     elif ((rat1 != '-') and (rat2 == '-')):
-        rst = [1,opcode,'-',reg2,rat1,'-',0]
+        rst = [1,opcode,'-',reg2,rat1,'-',0,clk,0,0]
     else:
-        rst = [1,opcode,'-','-',rat1,rat2,0]
+        rst = [1,opcode,'-','-',rat1,rat2,0,clk,0,0]
     return rst
 
 def issue():
-    global instruction_queue
+    global instruction_queue, counter
     global rs0, rs1, rs2, rs3, rs4, r_0, r_1, r_2, r_3, r_4, r_5, r_6, r_7
     current_inst = list(map(lambda each:each.strip("\s"), instruction_queue[0]))
     opcode = int(current_inst[0])
@@ -91,99 +91,108 @@ def issue():
     rat2 = eval(register_alias_table(int(current_inst[6])))
     reg1 = eval(register_file(int(current_inst[4])))
     reg2 = eval(register_file(int(current_inst[6])))
+    counter = counter+1
     if ((opcode == 0) or (opcode == 1)):
         if (rs0[0] == 0):
-            rs0 = fillUp(opcode,reg1,reg2,rat1,rat2)
+            rs0 = fillUp(opcode,reg1,reg2,rat1,rat2,counter)
             update_rat(dest,'rs0')
             del instruction_queue[0]
         elif (rs1[0] == 0):
-            rs1 = fillUp(opcode,reg1,reg2,rat1,rat2)
+            rs1 = fillUp(opcode,reg1,reg2,rat1,rat2,counter)
             update_rat(dest,'rs1')
             del instruction_queue[0]
         elif (rs2[0] == 0):
-            rs2 = fillUp(opcode,reg1,reg2,rat1,rat2)
+            rs2 = fillUp(opcode,reg1,reg2,rat1,rat2,counter)
             update_rat(dest,'rs2')
             del instruction_queue[0]
         else:
             pass
     else:
         if (rs3[0] == 0):
-            rs3 = fillUp(opcode,reg1,reg2,rat1,rat2)
+            rs3 = fillUp(opcode,reg1,reg2,rat1,rat2,counter)
             update_rat(dest,'rs3')
             del instruction_queue[0]
         elif (rs4[0] == 0):
-            rs4 = fillUp(opcode,reg1,reg2,rat1,rat2)
+            rs4 = fillUp(opcode,reg1,reg2,rat1,rat2,counter)
             update_rat(dest,'rs4')
             del instruction_queue[0]
         else:
             pass
 
 def dispatch():
-    global instruction_queue
+    global instruction_queue, counter, inst_end
     global rs0, rs1, rs2, rs3, rs4;
-    result1 = 0; result2 = 0; flag = -1
-    if (rs0[0] == 1):
+    result1 = None; result2 = None; flag1 = None; flag2 = None;
+    exct = None; excl = None;
+    if (inst_end == True):
+        counter = counter + 1
+    if ((rs0[0] == 1) and (counter > rs0[7]) and (rs0[6] == 0)):
         if ((rs0[2] != '-') and (rs0[3] != '-')):
             if (rs0[1] == 0):
                 result1 = rs0[2] + rs0[3] 
             else:
                 result1 = rs0[2] - rs0[3] 
-            rs0[6] = 1; flag = 0
+            rs0[6] = 1; flag1 = 0; exct = counter + 2
+            rs0[8] = result1; rs0[9] = exct
         else:
             pass
-    elif (rs1[0] == 1):
+    elif ((rs1[0] == 1) and (counter > rs1[7]) and (rs1[6] == 0)):
         if ((rs1[2] != '-') and (rs1[3] != '-')):
             if (rs1[1] == 0):
                 result1 = rs1[2] + rs1[3] 
             else:
                 result1 = rs1[2] - rs1[3] 
-            rs1[6] = 1; flag = 1
+            rs1[6] = 1; flag1 = 1; exct = counter + 2
+            rs1[8] = result1; rs1[9] = exct
         else:
             pass
-    elif (rs2[0] == 1):
+    elif ((rs2[0] == 1) and (counter > rs2[7]) and (rs2[6] == 0)):
         if ((rs2[2] != '-') and (rs2[3] != '-')):
             if (rs2[1] == 0):
                 result1 = rs2[2] + rs2[3] 
             else:
                 result1 = rs2[2] - rs2[3] 
-            rs2[6] = 1; flag = 2
+            rs2[6] = 1; flag1 = 2; exct = counter + 2
+            rs2[8] = result1; rs2[9] = exct
         else:
             pass
     else:
         pass
     
-    if (rs3[0] == 1):
+    if ((rs3[0] == 1) and (counter > rs3[7]) and (rs3[6] == 0)):
         if ((rs3[2] != '-') and (rs3[3] != '-')):
             if (rs3[1] == 2):
                 result2 = rs3[2] * rs3[3] 
+                excl = counter + 10
+                rs3[8] = result2; rs3[9] = excl
             else:
                 result2 = rs3[2] / rs3[3] 
-            rs3[6] = 1; flag = 3
+                excl = counter + 40
+                rs3[8] = result2; rs3[9] = excl
+            rs3[6] = 1; flag2 = 3
         else:
             pass
-    elif (rs4[0] == 1):
+    elif ((rs4[0] == 1) and (counter > rs4[7]) and (rs4[6] == 0)):
         if ((rs4[2] != '-') and (rs4[3] != '-')):
             if (rs4[1] == 2):
                 result2 = rs4[2] * rs4[3] 
+                excl = counter + 10
+                rs4[8] = result2; rs4[9] = excl
             else:
                 result2 = rs4[2] / rs4[3] 
-            rs4[6] = 1; flag = 4
+                excl = counter + 40
+                rs4[8] = result2; rs4[9] = excl
+            rs4[6] = 1; flag2 = 4
         else:
             pass
     else:
         pass
-    
-    if ((result1 != 0) and (result2 != 0)):
-        return result2, flag
-    elif (result1 == 0):
-        return result2, flag
-    elif (result2 == 0):
-        return result1, flag
-    else:
-        return 0, -1
+
 	
 def broadcast(flag, result):
     global rs0, rs1, rs2, rs3, rs4;
+    global counter
+    counter = counter + 1
     if (flag == 0):
         if(rs1[4] == 'rs0'):
             rs1[2] = result
@@ -249,7 +258,8 @@ def broadcast(flag, result):
         if(rs0[4] == 'rs4'):
             rs0[2] = result
             rs0[4] = '-'
-  
+    writeback(flag, result)
+    
 def getRat(resstn):
     global r_0, r_1, r_2, r_3, r_4, r_5, r_6, r_7
     if (r_0 == resstn):
@@ -284,23 +294,54 @@ def writeback(flag, result):
     if (flag == 0):
         reg = getRat('rs0')
         update_register(reg, result)
-        rs0[0] = 0
+        rs0[0] = 0; rs0[6] = 0
     if (flag == 1):
         reg = getRat('rs1')
         update_register(reg, result)
-        rs1[0] = 0
+        rs1[0] = 0; rs1[6] = 0
     if (flag == 2):
         reg = getRat('rs2')
         update_register(reg, result)
-        rs2[0] = 0
+        rs2[0] = 0; rs2[6] = 0
     if (flag == 3):
         reg = getRat('rs3')
         update_register(reg, result)
-        rs3[0] = 0
+        rs3[0] = 0; rs3[6] = 0
     if (flag == 4):
         reg = getRat('rs4')
         update_register(reg, result)
-        rs4[0] = 0
+        rs4[0] = 0; rs4[6] = 0
+        
+def readyToBroadcast():
+    global counter
+    contender = [0,0,0,0,0]
+    if ((rs0[9] <= counter) and (rs0[6] == 1)):
+        contender[0] = 1
+    if ((rs1[9] <= counter) and (rs1[6] == 1)):
+        contender[1] = 1
+    if ((rs2[9] <= counter) and (rs2[6] == 1)):
+        contender[2] = 1
+    if ((rs3[9] <= counter) and (rs3[6] == 1)):
+        contender[3] = 1
+    if ((rs4[9] <= counter) and (rs4[6] == 1)):
+        contender[4] = 1
+    
+    if ((contender[3] == 1) or (contender[4] == 1)):
+        if (contender[3] == 1):
+            return 3, rs3[8]
+        else:
+            return 4, rs4[8]
+    else:
+        if (contender[0] == 1):
+            return 0, rs0[8]
+        if (contender[1] == 1):
+            return 1, rs1[8]
+        if (contender[2] == 1):
+            return 2, rs2[8]
+        else:
+            return None, None
+            
+    
     
 def main():
     with open('input.txt', 'r') as f1:
@@ -334,27 +375,36 @@ def main():
         r6 = int(data[2 + number_of_instruction + 6])
         r7 = int(data[2 + number_of_instruction + 7])
         
-        global counter
+        global counter, inst_end
         while (counter < cycles_of_simulation):
             if (instruction_queue != []):
                 issue()
-            res, fl = dispatch()
-            broadcast(fl, res)
-            print(fl,res)
-            writeback(fl, res)
-            counter += 1
-            
+            else:
+                inst_end = True
+            if (counter > 1):
+                dispatch()
+            fl , res = readyToBroadcast()
+            if (fl != None):
+                broadcast(fl, res)
+        print(rs0)
+        print(rs1)
+        print(rs2)
+        print(rs3)
+        print(rs4)
+        print(instruction_queue)
+        
        		
 if __name__ == "__main__":
-	r0 = 0; r1 = 0; r2 = 0; r3 = 0; r4 = 0; r5 = 0; r6 = 0; r7 = 0 				#register file
-	r_0 = '-'; r_1 = '-'; r_2 = '-'; r_3 = '-'; r_4 = '-'; r_5 = '-'; r_6 = '-'; r_7 = '-'; 		#register alias table
-	instruction_queue = []						#instruction queue
-	counter = 0
+    r0 = 0; r1 = 0; r2 = 0; r3 = 0; r4 = 0; r5 = 0; r6 = 0; r7 = 0 				#register file
+    r_0 = '-'; r_1 = '-'; r_2 = '-'; r_3 = '-'; r_4 = '-'; r_5 = '-'; r_6 = '-'; r_7 = '-'; 		#register alias table
+    instruction_queue = []						#instruction queue
+    counter = 0; 
+    inst_end = False
 	#reservation stations
-	rs0 = [0,'null','null','null','null','null','null']
-	rs1 = [0,'null','null','null','null','null','null'] 
-	rs2 = [0,'null','null','null','null','null','null'] 
-	rs3 = [0,'null','null','null','null','null','null']
-	rs4 = [0,'null','null','null','null','null','null']
-	
-	main()
+    rs0 = [0,'null','null','null','null','null','null',0,0,0]
+    rs1 = [0,'null','null','null','null','null','null',0,0,0]
+    rs2 = [0,'null','null','null','null','null','null',0,0,0]
+    rs3 = [0,'null','null','null','null','null','null',0,0,0]
+    rs4 = [0,'null','null','null','null','null','null',0,0,0]
+    
+    main()
