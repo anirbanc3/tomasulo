@@ -227,21 +227,112 @@ def main():
             if (fl != None):
                 broadcast(fl, res)
             
-            reservation_table = [['RS0'] + rs0, ['RS1'] + rs1, ['RS2'] + rs2,  ['RS3'] + rs3, ['RS4'] + rs4]
+            reservation_table = [['RS0'] + rs0[:7], ['RS1'] + rs1[:7], ['RS2'] + rs2[:7],  ['RS3'] + rs3[:7], ['RS4'] + rs4[:7]]
 #            print(reservation_table)
 #            print(register)
 #            print(regalias)
 #            print(' ')
         
         with open('output.txt','w') as f2:
-            f2.write("             Busy    Op     Vj    Vk    Qj     Qk     Disp \n")
-            f2.write("------------------------------------------------------------------------\n")
-            for item in reservation_table:
-                print(item.split(","))
-            
-            
-            
-            
+            f2.write("             Busy      Op          Vj      Vk        Qj         Qk      Disp \n")
+            f2.write("--------------------------------------------------------------------------------------\n")
+            for index, item in enumerate(reservation_table):
+				for k, l in enumerate(item):
+					if (l == None):
+						f2.write("    ")
+					else:
+						if (k == 2):
+							if (l == 0):
+								f2.write("Add")
+							if (l == 1):
+								f2.write("Sub")
+							if (l == 2):
+								f2.write("Mul")
+							if (l == 3):
+								f2.write("Div")
+							else:
+								f2.write("   ")
+						if ((k == 5) or (k == 6)):
+							if (l == 0):
+								f2.write("RS0")
+							if (l == 1):
+								f2.write("RS1")
+							if (l == 2):
+								f2.write("RS2")
+							if (l == 3):
+								f2.write("RS3")
+							if (l == 3):
+								f2.write("RS4")
+							else:
+								f2.write("   ")
+						if (k == 0 or k == 1 or k == 3 or k == 4 or k == 7):
+							f2.write(str(l))
+					if (k == 0):
+						f2.write("    ")
+					f2.write("       ")
+				f2.write("\n")
+
+            f2.write("___________________________________________________________________________________________\n\n")
+            f2.write("             RF          RAT     \n")       
+            f2.write("--------------------------------------------------------------------------------------\n")
+            for i in range(0,8):
+				f2.write(str(i)+":           ")
+				f2.write(str(register[i])+"           ")
+				if (regalias[i] == 0):
+					f2.write("RS0")
+				elif (regalias[i] == 1):
+					f2.write("RS1")
+				elif (regalias[i] == 2):
+					f2.write("RS2")
+				elif (regalias[i] == 3):
+					f2.write("RS3")
+				elif (regalias[i] == 3):
+					f2.write("RS4")
+				else:
+					f2.write("   ")
+
+				f2.write("\n")
+
+            f2.write("___________________________________________________________________________________________\n\n")
+            f2.write("      Instruction Queue    \n")       
+            f2.write("--------------------------------------------------------------------------------------\n")
+            if (inst_end == False):
+                for instruction in instruction_queue:
+                    for index, item in enumerate(instruction):
+						if (index == 0):
+							if (item == '0'):
+								f2.write("Add    ")
+							elif (item == '1'):
+								f2.write("Sub    ")
+							elif (item == '2'):
+								f2.write("Mul    ")
+							elif (item == '3'):
+								f2.write("Div    ")
+						else:
+							if (item == '0'):
+								f2.write("R0   ")
+							elif (item == '1'):
+								f2.write("R1   ")
+							elif (item == '2'):
+								f2.write("R2   ")
+							elif (item == '3'):
+								f2.write("R3   ")
+							elif (item == '4'):
+								f2.write("R4   ")
+							elif (item == '5'):
+								f2.write("R5   ")
+							elif (item == '6'):
+								f2.write("R6   ")
+							elif (item == '7'):
+								f2.write("R7   ")
+                    f2.write("\n")
+            else:
+				f2.write("All instructions processed. Queue empty!\n")
+
+            f2.write("___________________________________________________________________________________________\n\n")
+
+
+
 if __name__ == "__main__":
     register = [0, 0, 0, 0, 0, 0, 0, 0] 			#register file
     regalias = [None, None, None, None, None, None, None, None]         #register alias table
